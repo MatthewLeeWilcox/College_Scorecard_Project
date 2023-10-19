@@ -10,7 +10,7 @@ data_path <- '/Data/Shrunk_data.csv'
 df <- fread(paste(current_directory, data_path, sep = ""))
 
 # Create Urban_type and Urban_description
-df2 <- df %>% select(INSTNM, LOCALE) %>%
+df2 <- df %>% select(INSTNM, CITY, ZIP, STABBR, LOCALE, LATITUDE, LONGITUDE) %>%
   mutate(urban_type = case_when(
   LOCALE == 11 ~ "City",
   LOCALE == 12 ~ "City",
@@ -41,7 +41,6 @@ df2 <- df %>% select(INSTNM, LOCALE) %>%
   ) 
 
 )
-
 # Urban Description reference this for meaning of size:
 # 11	City: Large (population of 250,000 or more)
 # 12	City: Midsize (population of at least 100,000 but less than 250,000)
@@ -56,4 +55,4 @@ df2 <- df %>% select(INSTNM, LOCALE) %>%
 # 42	Rural: Distant (rural territory more than 5 miles but up to 25 miles from an urbanized area or more than 2.5 and up to 10 miles from an urban cluster)
 # 43	Rural: Remote (rural territory more than 25 miles from an urbanized area and more than 10 miles from an urban cluster)
 
-
+write.csv(df2, paste(current_directory,"/Data/locale_descript_data.csv", sep = ""))

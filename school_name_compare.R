@@ -8,7 +8,7 @@ library(maps)
 library(mapdata)
 # Data directory
 current_directory <- getwd()
-data_path <- '/Data/Shrunk_data.csv'
+data_path <- '/Data/locale_descript_data.csv'
 
 # Read in Data
 df_shrink <- fread(paste(current_directory, data_path, sep = ""))
@@ -84,8 +84,13 @@ plot_usmap(data = state_name_groupby, values = "total_count") +
     title = "Number of College with State Name in University Name",
     fill = "Number of Colleges"
   )
+library(leaflet)
 
 
+
+
+
+write_csv(uni_names_df, paste(current_directory,"/Data/uni_names_vecotrized.csv", sep = ""))
 
 
 
