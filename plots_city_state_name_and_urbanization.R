@@ -87,3 +87,31 @@ ggplot(df_state, aes(fill = state_name_included, x = urban_type, y = total_count
     fill = "State Name included in College Name"
   )
 
+
+# Filter just cities
+
+df_just_cities <- df %>%
+  filter(urban_type == "City") %>%
+  group_by(urban_description, city_name_included) %>%
+  summarise(total_count = n(), .groups = 'drop')
+  
+# Graphs based on City Size
+ggplot(df_just_cities, aes(fill = city_name_included, x = urban_description, y = total_count)) +
+  geom_bar(position = "stack", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Count") + 
+  labs( 
+    title = "Size of City and inclusion of City name in the Institutuions name",
+    subtitle = "Stacked",
+    fill = "City Name included in College Name"
+  )
+
+ggplot(df_just_cities, aes(fill = city_name_included, x = urban_description, y = total_count)) +
+  geom_bar(position = "fill", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Percentage") + 
+  labs( 
+    title = "Size of City and inclusion of City name in the Institutuions name",
+    subtitle = "Stacked Percent",
+    fill = "City Name included in College Name"
+  )
