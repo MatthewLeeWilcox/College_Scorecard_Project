@@ -1,0 +1,244 @@
+---
+title: "Analyis of the impact of location and urbanization on naming and Majors"
+author: "Matthew Wilcox, Ray, Logan Lapace"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+--- 
+# Libraries
+```{r}
+library(tidyverse)
+library(data.table)
+library(dplyr)
+library(leaflet)
+```
+
+# Read Data
+```{r}
+current_directory <- getwd()
+data_path <- '/Data/uni_names_df.csv'
+uni_names_df <- fread(paste(current_directory, data_path, sep = ""))
+
+```
+
+
+# Uni Names Graphs
+
+```{r}
+
+# Count of total colleges per city
+total_colleges_per_city <- uni_names_df %>% group_by(state_abbr, city) %>%
+  summarise(total_count=n())%>% arrange(desc(total_count))
+
+total_colleges_per_city_20 <- head(total_colleges_per_city, 20)
+```
+
+```{r}
+# Graph previous
+
+ggplot(data = total_colleges_per_city_20, aes(x = reorder(city, total_count), y = total_count)) + 
+  geom_bar(stat = "identity") +
+  coord_flip() + 
+  labs(
+    title = "Number of College in Each City"
+  ) + 
+  xlab("City") + 
+  ylab("Number of Colleges")
+```
+
+```{r}
+# Group by the city and if the city name is included and count.
+city_name_groupby <- uni_names_df %>% group_by(state_abbr, city, city_name_included) %>% 
+  summarise(total_count=n(),
+            .groups = 'drop')%>% arrange(desc(total_count))
+
+# Group by the State 
+state_name_groupby <- uni_names_df %>% group_by(state_abbr, state_name_included) %>% 
+  summarise(total_count=n(),
+            .groups = 'drop')%>% arrange(desc(total_count)) %>%
+  filter(state_name_included == TRUE)%>% 
+  rename('state' = 'state_abbr')
+```
+
+```{r}
+# Plot States
+# states_map <- map_data("state")
+# state_name_groupby$region <- tolower(state_mapping[state_name_groupby$state_abbr])
+# state_name_groupby_map <- left_join(states_map, state_name_groupby, by = "region")
+# 
+# ggplot(state_name_groupby_map, aes(long, lat, group = group))+
+#   geom_polygon(aes(fill = total_count)) 
+
+
+
+
+plot_usmap(data = state_name_groupby, values = "total_count") + 
+  labs(
+    title = "Number of College with State Name in University Name",
+    fill = "Number of Colleges"
+  )
+
+```
+
+
+```{r}
+# Select variables of interest
+df <- uni_names_df %>% select(instution, city, state_name, state_name_included, city_name_included, urban_type, urban_description)
+
+# Group By City DF
+df_city <- df %>% drop_na() %>% 
+  group_by(urban_type, city_name_included) %>%
+  summarise(total_count = n(), .groups = 'drop')
+
+# Group by State df
+df_state <- df %>% drop_na()%>%
+  group_by(urban_type, state_name_included) %>%
+  summarise(total_count = n(), .groups = 'drop')
+```
+
+```{r}
+# Graphs
+
+ggplot(df_city, aes(fill = city_name_included, x = urban_type, y = total_count)) +
+  geom_bar(position = "fill", stat = "identity") + 
+  xlab("Urbanization")+
+  ylab("Percentage") + 
+  labs( 
+    title = "Inclusion of City name in the University name with Respect to Urbanziation",
+    subtitle = "Pct Stacked",
+    fill = "City Name included in College Name"
+    )
+```
+
+```{r}
+ggplot(df_city, aes(fill = city_name_included, x = urban_type, y = total_count)) +
+  geom_bar(position = "dodge", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Count") + 
+  labs( 
+    title = "Inclusion of City name in the University name with Respect to Urbanziation",
+    subtitle = "Grouped",
+    fill = "City Name included in College Name"
+  )
+```
+
+```{r}
+ggplot(df_city, aes(fill = city_name_included, x = urban_type, y = total_count)) +
+  geom_bar(position = "stack", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Count") + 
+  labs( 
+    title = "Inclusion of City name in the University name with Respect to Urbanziation",
+    subtitle = "Stacked",
+    fill = "City Name included in College Name"
+  )
+```
+
+```{r}
+ggplot(df_state, aes(fill = state_name_included, x = urban_type, y = total_count)) +
+  geom_bar(position = "fill", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Percentage") + 
+  labs( 
+    title = "Inclusion of State name in the University name with Respect to Urbanziation",
+    subtitle = "Pct Stacked",
+    fill = "State Name included in College Name"
+  )
+```
+
+```{r}
+ggplot(df_state, aes(fill = state_name_included, x = urban_type, y = total_count)) +
+  geom_bar(position = "dodge", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Count") + 
+  labs( 
+    title = "Inclusion of State name in the University name with Respect to Urbanziation",
+    subtitle = "Grouped",
+    fill = "State Name included in College Name"
+  )
+```
+
+```{r}
+ggplot(df_state, aes(fill = state_name_included, x = urban_type, y = total_count)) +
+  geom_bar(position = "stack", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Count") + 
+  labs( 
+    title = "Inclusion of State name in the University name with Respect to Urbanziation",
+    subtitle = "Stacked",
+    fill = "State Name included in College Name"
+  )
+```
+
+```{r}
+# Filter just cities
+
+df_just_cities <- df %>%
+  filter(urban_type == "City") %>%
+  group_by(urban_description, city_name_included) %>%
+  summarise(total_count = n(), .groups = 'drop')
+```
+```{r}
+# Graphs based on City Size
+ggplot(df_just_cities, aes(fill = city_name_included, x = urban_description, y = total_count)) +
+  geom_bar(position = "stack", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Count") + 
+  labs( 
+    title = "Size of City and inclusion of City name in the Institutuions name",
+    subtitle = "Stacked",
+    fill = "City Name included in College Name"
+  )
+```
+```{r}
+ggplot(df_just_cities, aes(fill = city_name_included, x = urban_description, y = total_count)) +
+  geom_bar(position = "fill", stat = "identity")+ 
+  xlab("Urbanization")+
+  ylab("Percentage") + 
+  labs( 
+    title = "Size of City and inclusion of City name in the Institutuions name",
+    subtitle = "Stacked Percent",
+    fill = "City Name included in College Name"
+  )
+
+```
+
+```{r}
+map_df <- uni_names_df %>% mutate(urban_color = case_when(
+  urban_type == "City" ~ "redc",
+  urban_type == "Suburb" ~ "bluec",
+  urban_type == "Town" ~ "greenc",
+  urban_type == "Rural" ~ "yellowc"
+)  )
+map_df$pop_up_discript <- paste("Insitution Name:", df$instution, "<br/> ",
+                            "State: ", df$state_name, "<br/> ",
+                            "City: ", df$city, "<br/> ",
+                            "Urban: ", df$urban_type, "-", df$urban_description, "\n")
+
+
+
+my_icons <- iconList(
+  # pink = makeIcon(paste(current_directory, "/Icons/pink_icon.png", sep = ""),paste(current_directory, "/Icons/pink_icon.png", sep = ""),15,15),
+  redc = makeIcon(paste(current_directory, "/Icons/red_icon.png", sep = ""),paste(current_directory, "/Icons/red_icon.png", sep = ""),15,15),
+  # purple = makeIcon(paste(current_directory, "/Icons/purple_icon.png", sep = ""),paste(current_directory, "/Icons/purple_icon.png", sep = ""),15,15),
+  # white = makeIcon(paste(current_directory, "/Icons/white_icon.png", sep = ""),paste(current_directory, "/Icons/white_icon.png", sep = ""),15,15),
+  yellowc = makeIcon(paste(current_directory, "/Icons/yellow_icon.png", sep = ""),paste(current_directory, "/Icons/yellow_icon.png", sep = ""),15,15),
+  greenc = makeIcon(paste(current_directory, "/Icons/green_icon.png", sep = ""),paste(current_directory, "/Icons/green_icon.png", sep = ""),15,15),
+  bluec = makeIcon(paste(current_directory, "/Icons/blue_icon.png", sep = ""),paste(current_directory, "/Icons/blue_icon.png", sep = ""),15,15)
+  # black = makeIcon(paste(current_directory, "/Icons/black_icon.png", sep = ""),paste(current_directory, "/Icons/black_icon.png", sep = ""),15,15),
+  # orange = makeIcon(paste(current_directory, "/Icons/orange_icon.png", sep = ""),paste(current_directory, "/Icons/orange_icon.png", sep = ""),15,15)
+
+)
+
+
+
+map_uni <- leaflet(map_df) %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels) %>% 
+  addMarkers(lng = ~LONGITUDE,
+             lat = ~LATITUDE,
+             popup = ~pop_up_discript,
+             ) %>%
+  setView(lng = -96.25, lat = 39.50, zoom = 4)
+map_uni
+```
